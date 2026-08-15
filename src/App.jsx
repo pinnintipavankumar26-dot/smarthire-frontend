@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:8080";
+const API_URL = "https://smarthire-backend-50ut.onrender.com";
 
 const globalStyles = `
   * { box-sizing: border-box; }

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
+import "./App.css";
 
 const API_URL = "https://smarthire-backend-50ut.onrender.com";
 
@@ -381,6 +382,306 @@ function App() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // ==========================================
+  // AUTHENTICATION PAGE
+  // ==========================================
+
+  const [authPage, setAuthPage] = useState("login");
+
+  // Signup
+  const [signupFullName, setSignupFullName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
+  const [signupRole, setSignupRole] = useState("STUDENT");
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
+
+  // Forgot / Reset password
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetToken, setResetToken] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  // ==========================================
+  // REGISTER / SIGN UP
+  // ==========================================
+
+  const handleSignup = async (e) => {
+
+    e.preventDefault();
+
+    setMessage("");
+
+    if (signupPassword !== signupConfirmPassword) {
+
+      setMessage("Passwords do not match");
+      setMessageType("error");
+
+      return;
+    }
+
+    if (signupPassword.length < 6) {
+
+      setMessage("Password must be at least 6 characters");
+      setMessageType("error");
+
+      return;
+    }
+
+    try {
+
+      const response = await fetch(
+          API_URL + "/api/users/register",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              fullName: signupFullName,
+              email: signupEmail,
+              password: signupPassword,
+              role: signupRole
+            })
+          }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+
+        throw new Error(
+            data.message ||
+            "Registration failed"
+        );
+
+      }
+
+      console.log(
+          "Registered user:",
+          data
+      );
+
+      // Clear signup fields
+
+      setSignupFullName("");
+      setSignupEmail("");
+      setSignupPassword("");
+      setSignupConfirmPassword("");
+      setSignupRole("STUDENT");
+
+      setMessage(
+          "Account created successfully. Please login."
+      );
+
+      setMessageType("success");
+
+      setEmail(data.email || "");
+
+      setPassword("");
+
+      setAuthPage("login");
+
+    } catch (error) {
+
+      console.error(
+          "Signup error:",
+          error
+      );
+
+      setMessage(
+          error.message ||
+          "Registration failed"
+      );
+
+      setMessageType("error");
+
+    }
+
+  };
+
+  // ==========================================
+  // FORGOT PASSWORD
+  // ==========================================
+
+  const handleForgotPassword = async (e) => {
+
+    e.preventDefault();
+
+    setMessage("");
+
+    try {
+
+      const response = await fetch(
+          API_URL + "/api/users/forgot-password",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              email: resetEmail
+            })
+          }
+      );
+
+      const data = await response.text();
+
+      if (!response.ok) {
+
+        let errorMessage = data;
+
+        try {
+
+          const errorJson =
+              JSON.parse(data);
+
+          errorMessage =
+              errorJson.message ||
+              errorMessage;
+
+        } catch {
+          // Response was plain text
+        }
+
+        throw new Error(
+            errorMessage ||
+            "Unable to generate reset token"
+        );
+
+      }
+
+      console.log(
+          "Password reset token:",
+          data
+      );
+
+      // Your backend currently RETURNS
+      // the reset token directly.
+
+      setResetToken(data);
+
+      setMessage(
+          "Reset token generated. Enter the token below."
+      );
+
+      setMessageType("success");
+
+    } catch (error) {
+
+      console.error(
+          "Forgot password error:",
+          error
+      );
+
+      setMessage(
+          error.message ||
+          "Unable to process forgot password"
+      );
+
+      setMessageType("error");
+
+    }
+
+  };
+
+  // ==========================================
+  // RESET PASSWORD
+  // ==========================================
+
+  const handleResetPassword = async (e) => {
+
+    e.preventDefault();
+
+    setMessage("");
+
+    try {
+
+      const response = await fetch(
+          API_URL + "/api/users/reset-password",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+              token: resetToken,
+              newPassword: newPassword
+            })
+          }
+      );
+
+      const data = await response.text();
+
+      if (!response.ok) {
+
+        let errorMessage = data;
+
+        try {
+
+          const errorJson =
+              JSON.parse(data);
+
+          errorMessage =
+              errorJson.message ||
+              errorMessage;
+
+        } catch {
+          // Response was plain text
+        }
+
+        throw new Error(
+            errorMessage ||
+            "Password reset failed"
+        );
+
+      }
+
+      setMessage(
+          data ||
+          "Password reset successfully. Please login."
+      );
+
+      setMessageType("success");
+
+      setNewPassword("");
+
+      setResetToken("");
+
+      setResetEmail("");
+
+      // Go back to login after successful reset
+
+      setTimeout(() => {
+
+        setAuthPage("login");
+
+      }, 1200);
+
+    } catch (error) {
+
+      console.error(
+          "Reset password error:",
+          error
+      );
+
+      setMessage(
+          error.message ||
+          "Password reset failed"
+      );
+
+      setMessageType("error");
+
+    }
+
+  };
+
+
 
   const [role, setRole] = useState("");
   const [userId, setUserId] = useState("");
@@ -1708,102 +2009,474 @@ function App() {
   };
 
   // ==========================================
-  // LOGIN PAGE
+  // AUTHENTICATION PAGE
   // ==========================================
 
   if (!isLoggedIn) {
 
     return (
 
-        <div style={styles.page} className="sh-page">
+      <div
+          style={styles.page}
+          className="sh-page"
+      >
 
-          <div style={styles.card} className="sh-login-card">
+        <div
+            style={styles.card}
+            className="sh-login-card"
+        >
 
-            <h1 style={styles.title}>
-              SmartHire
-            </h1>
+          {/* ==================================
+              LOGIN
+          ================================== */}
 
-            <p style={styles.subtitle}>
-              Student & Recruiter Job Portal
-            </p>
+          {authPage === "login" && (
 
-            <form
-                onSubmit={handleLogin}
-            >
+            <>
 
-              <div style={styles.formGroup}>
+              <h1 style={styles.title}>
+                SmartHire
+              </h1>
 
-                <label style={styles.label}>
-                  Email
-                </label>
+              <p style={styles.subtitle}>
+                Student & Recruiter Job Portal
+              </p>
 
-                <input
-                    type="email"
-                    placeholder="Enter your email"
-                    value={email}
-                    onChange={
-                      e =>
-                          setEmail(
-                              e.target.value
-                          )
-                    }
-                    required
-                    style={styles.input}
-                />
+              <form onSubmit={handleLogin}>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Email
+                  </label>
+
+                  <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={email}
+                      onChange={
+                        e =>
+                            setEmail(
+                                e.target.value
+                            )
+                      }
+                      required
+                      style={styles.input}
+                  />
+
+                </div>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Password
+                  </label>
+
+                  <input
+                      type="password"
+                      placeholder="Enter your password"
+                      value={password}
+                      onChange={
+                        e =>
+                            setPassword(
+                                e.target.value
+                            )
+                      }
+                      required
+                      style={styles.input}
+                  />
+
+                </div>
+
+                <button
+                    type="submit"
+                    style={styles.button}
+                >
+                  Login
+                </button>
+
+              </form>
+
+              <div style={styles.authLinks}>
+
+                <button
+                    type="button"
+                    onClick={() => {
+
+                      setMessage("");
+
+                      setResetEmail(email);
+
+                      setAuthPage("forgot");
+
+                    }}
+                    style={styles.linkButton}
+                >
+                  Forgot Password?
+                </button>
+
+                <div style={styles.signupPrompt}>
+
+                  <span>
+                    Don't have an account?
+                  </span>
+
+                  <button
+                      type="button"
+                      onClick={() => {
+
+                        setMessage("");
+
+                        setAuthPage("signup");
+
+                      }}
+                      style={styles.linkButton}
+                  >
+                    Sign Up
+                  </button>
+
+                </div>
 
               </div>
 
-              <div style={styles.formGroup}>
+            </>
 
-                <label style={styles.label}>
-                  Password
-                </label>
+          )}
 
-                <input
-                    type="password"
-                    placeholder="Enter your password"
-                    value={password}
-                    onChange={
-                      e =>
-                          setPassword(
-                              e.target.value
-                          )
-                    }
-                    required
-                    style={styles.input}
-                />
+          {/* ==================================
+              SIGN UP
+          ================================== */}
+
+          {authPage === "signup" && (
+
+            <>
+
+              <h1 style={styles.title}>
+                Create Account
+              </h1>
+
+              <p style={styles.subtitle}>
+                Join SmartHire
+              </p>
+
+              <form onSubmit={handleSignup}>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Full Name
+                  </label>
+
+                  <input
+                      type="text"
+                      placeholder="Enter your full name"
+                      value={signupFullName}
+                      onChange={
+                        e =>
+                            setSignupFullName(
+                                e.target.value
+                            )
+                      }
+                      required
+                      style={styles.input}
+                  />
+
+                </div>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Email
+                  </label>
+
+                  <input
+                      type="email"
+                      placeholder="Enter your email"
+                      value={signupEmail}
+                      onChange={
+                        e =>
+                            setSignupEmail(
+                                e.target.value
+                            )
+                      }
+                      required
+                      style={styles.input}
+                  />
+
+                </div>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Password
+                  </label>
+
+                  <input
+                      type="password"
+                      placeholder="Minimum 6 characters"
+                      value={signupPassword}
+                      onChange={
+                        e =>
+                            setSignupPassword(
+                                e.target.value
+                            )
+                      }
+                      required
+                      minLength={6}
+                      style={styles.input}
+                  />
+
+                </div>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Confirm Password
+                  </label>
+
+                  <input
+                      type="password"
+                      placeholder="Confirm your password"
+                      value={signupConfirmPassword}
+                      onChange={
+                        e =>
+                            setSignupConfirmPassword(
+                                e.target.value
+                            )
+                      }
+                      required
+                      minLength={6}
+                      style={styles.input}
+                  />
+
+                </div>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Account Type
+                  </label>
+
+                  <select
+                      value={signupRole}
+                      onChange={
+                        e =>
+                            setSignupRole(
+                                e.target.value
+                            )
+                      }
+                      style={styles.input}
+                  >
+
+                    <option value="STUDENT">
+                      Student
+                    </option>
+
+                    <option value="RECRUITER">
+                      Recruiter
+                    </option>
+
+                  </select>
+
+                </div>
+
+                <button
+                    type="submit"
+                    style={styles.button}
+                >
+                  Create Account
+                </button>
+
+              </form>
+
+              <div style={styles.authLinks}>
+
+                <button
+                    type="button"
+                    onClick={() => {
+
+                      setMessage("");
+
+                      setAuthPage("login");
+
+                    }}
+                    style={styles.linkButton}
+                >
+                  ← Back to Login
+                </button>
 
               </div>
 
-              <button
-                  type="submit"
-                  style={styles.button}
-              >
-                Login
-              </button>
+            </>
 
-            </form>
+          )}
 
-            {message && (
+          {/* ==================================
+              FORGOT PASSWORD
+          ================================== */}
 
-                <p
+          {authPage === "forgot" && (
+
+            <>
+
+              <h1 style={styles.title}>
+                Forgot Password
+              </h1>
+
+              <p style={styles.subtitle}>
+                Enter your registered email
+              </p>
+
+              <form onSubmit={handleForgotPassword}>
+
+                <div style={styles.formGroup}>
+
+                  <label style={styles.label}>
+                    Email
+                  </label>
+
+                  <input
+                      type="email"
+                      placeholder="Enter your registered email"
+                      value={resetEmail}
+                      onChange={
+                        e =>
+                            setResetEmail(
+                                e.target.value
+                            )
+                      }
+                      required
+                      style={styles.input}
+                  />
+
+                </div>
+
+                <button
+                    type="submit"
+                    style={styles.button}
+                >
+                  Generate Reset Token
+                </button>
+
+              </form>
+
+              {resetToken && (
+
+                <div style={styles.resetTokenBox}>
+
+                  <p style={styles.resetTokenTitle}>
+                    Reset Token
+                  </p>
+
+                  <input
+                      type="text"
+                      value={resetToken}
+                      onChange={
+                        e =>
+                            setResetToken(
+                                e.target.value
+                            )
+                      }
+                      style={styles.input}
+                  />
+
+                  <p style={styles.resetTokenHint}>
+                    This token is valid for 15 minutes.
+                  </p>
+
+                </div>
+
+              )}
+
+              {resetToken && (
+
+                <form
+                    onSubmit={handleResetPassword}
                     style={{
-                      ...styles.message,
-
-                      color:
-                          messageType === "error"
-                              ? "#dc2626"
-                              : "#16a34a"
+                      marginTop: "18px"
                     }}
                 >
-                  {message}
-                </p>
 
-            )}
+                  <div style={styles.formGroup}>
 
-          </div>
+                    <label style={styles.label}>
+                      New Password
+                    </label>
+
+                    <input
+                        type="password"
+                        placeholder="Enter new password"
+                        value={newPassword}
+                        onChange={
+                          e =>
+                              setNewPassword(
+                                  e.target.value
+                              )
+                        }
+                        required
+                        minLength={6}
+                        style={styles.input}
+                    />
+
+                  </div>
+
+                  <button
+                      type="submit"
+                      style={styles.button}
+                  >
+                    Reset Password
+                  </button>
+
+                </form>
+
+              )}
+
+              <div style={styles.authLinks}>
+
+                <button
+                    type="button"
+                    onClick={() => {
+
+                      setMessage("");
+
+                      setAuthPage("login");
+
+                    }}
+                    style={styles.linkButton}
+                >
+                  ← Back to Login
+                </button>
+
+              </div>
+
+            </>
+
+          )}
+
+          {/* ==================================
+              MESSAGE
+          ================================== */}
+
+          {message && (
+
+            <p
+                style={{
+                  ...styles.message,
+
+                  color:
+                      messageType === "error"
+                          ? "#dc2626"
+                          : "#16a34a"
+                }}
+            >
+              {message}
+            </p>
+
+          )}
 
         </div>
+
+      </div>
 
     );
 
@@ -4585,14 +5258,62 @@ const styles = {
     },
 
     jobDetailValue: {
-        fontSize: "14px",
-        color: "#0f172a",
-        fontWeight: "500",
-        lineHeight: "1.4"
-    }
-    
+      fontSize: "14px",
+      color: "#0f172a",
+      fontWeight: "500",
+      lineHeight: "1.4"
+    },
 
-};
+    authLinks: {
+      marginTop: "18px",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      gap: "10px"
+    },
+
+    signupPrompt: {
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: "5px",
+      color: "#64748b",
+      fontSize: "14px"
+    },
+
+    linkButton: {
+      border: "none",
+      background: "transparent",
+      color: "#4f46e5",
+      cursor: "pointer",
+      fontWeight: 700,
+      padding: "4px",
+      fontSize: "14px"
+    },
+
+    resetTokenBox: {
+      marginTop: "20px",
+      padding: "14px",
+      background: "#f8fafc",
+      border: "1px solid #e2e8f0",
+      borderRadius: "10px"
+    },
+
+    resetTokenTitle: {
+      margin: "0 0 8px",
+      color: "#334155",
+      fontWeight: 700,
+      fontSize: "14px"
+    },
+
+    resetTokenHint: {
+      margin: "4px 0 0",
+      color: "#64748b",
+      fontSize: "12px",
+      lineHeight: "1.4"
+    }
+    };
 
 
 export default App;
+// test

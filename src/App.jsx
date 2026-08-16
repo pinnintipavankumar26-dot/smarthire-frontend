@@ -1143,16 +1143,6 @@ function App() {
     const savedToken =
         localStorage.getItem("token");
 
-    console.log(
-        "Jobs token exists:",
-        !!savedToken
-    );
-
-    console.log(
-        "Jobs token:",
-        savedToken
-    );
-
     try {
 
         const response =
@@ -1177,11 +1167,6 @@ function App() {
 
         const data =
             await response.json();
-
-        console.log(
-            "Available jobs:",
-            data
-        );
 
         setJobs(
             Array.isArray(data)

@@ -1140,62 +1140,70 @@ function App() {
 
   const loadJobs = async () => {
 
-      const savedToken =
-          localStorage.getItem("token");
+    const savedToken =
+        localStorage.getItem("token");
 
-      try {
+    console.log(
+        "Jobs token exists:",
+        !!savedToken
+    );
 
-          const response =
-              await fetch(
-                  API_URL + "/api/jobs",
-                  {
-                      method: "GET",
-                      headers: {
-                          Authorization:
-                              `Bearer ${savedToken}`
-                      }
-                  }
-              );
+    console.log(
+        "Jobs token:",
+        savedToken
+    );
 
-          if (!response.ok) {
+    try {
 
-              throw new Error(
-                  `Failed to load jobs (${response.status})`
-              );
+        const response =
+            await fetch(
+                API_URL + "/api/jobs",
+                {
+                    method: "GET",
+                    headers: {
+                        Authorization:
+                            `Bearer ${savedToken}`
+                    }
+                }
+            );
 
-          }
+        if (!response.ok) {
 
-          const data =
-              await response.json();
+            throw new Error(
+                `Failed to load jobs (${response.status})`
+            );
 
-          console.log(
-              "Available jobs:",
-              data
-          );
+        }
 
-          setJobs(
-              Array.isArray(data)
-                  ? data
-                  : []
-          );
+        const data =
+            await response.json();
 
-      } catch (error) {
+        console.log(
+            "Available jobs:",
+            data
+        );
 
-          console.error(
-              "Jobs error:",
-              error
-          );
+        setJobs(
+            Array.isArray(data)
+                ? data
+                : []
+        );
 
-          setJobs([]);
+    } catch (error) {
 
-          showMessage(
-              "Unable to load jobs",
-              "error"
-          );
+        console.error(
+            "Jobs error:",
+            error
+        );
 
-      }
+        setJobs([]);
 
-  };
+        showMessage(
+            "Unable to load jobs",
+            "error"
+        );
+    }
+};
 
   // ==========================================
   // LOAD STUDENT APPLICATIONS
@@ -3591,8 +3599,7 @@ function StudentDashboard({
 
       };
 
-  const checkEligibility =
-      async (jobId) => {
+    const checkEligibility = async (jobId) => {
 
         const token =
             localStorage.getItem("token");
@@ -3600,26 +3607,156 @@ function StudentDashboard({
         const savedUserId =
             localStorage.getItem("userId");
 
-        const response =
-            await fetch(
-                API_URL + "/api/eligibility/user/" + savedUserId + "/job/" + jobId,
-                {
-                  headers: {
-                    Authorization:
-                        "Bearer " + token
-                  }
-                }
-            );
-
-        if (!response.ok) {
+        if (!token || !savedUserId) {
 
           throw new Error(
-              "Eligibility check failed"
+              "Please login again."
           );
 
         }
 
-        return response.json();
+        const response =
+            await fetch(
+                API_URL +
+                "/api/eligibility/user/" +
+                savedUserId +
+                "/job/" +
+                jobId,
+                {
+                  method: "GET",
+
+                  headers: {
+                    Authorization:
+                        "Bearer " + token,
+
+                    Accept:
+                        "application/json"
+                  }
+                }
+            );
+
+        const responseText =
+            await response.text();
+
+        console.log(
+            "Eligibility API status:",
+            response.status
+        );
+
+        console.log(
+            "Eligibility API response:",
+            responseText
+        );
+
+        if (!response.ok) {
+
+          let errorMessage =
+              "Eligibility check failed";
+
+          try {
+
+            const errorData =
+                JSON.parse(responseText);
+
+            errorMessage =
+                errorData.message ||
+                errorData.error ||
+                errorMessage;
+
+          } catch {
+            if (responseText.trim()) {
+              errorMessage = responseText;
+            }
+          }
+
+          throw new Error(
+              errorMessage
+          );
+
+        }
+
+        if (!responseText.trim()) {
+
+          throw new Error(
+              "Eligibility API returned an empty response."
+          );
+
+        }
+
+        let data;
+
+        try {
+
+          data =
+              JSON.parse(responseText);
+
+        } catch (error) {
+
+          console.error(
+              "Invalid eligibility JSON:",
+              responseText
+          );
+
+          throw new Error(
+              "Eligibility API returned invalid JSON."
+          );
+
+        }
+
+        console.log(
+            "Parsed eligibility:",
+            data
+        );
+
+        /*
+        * Backend may return:
+        *
+        * true
+        *
+        * OR
+        *
+        * false
+        *
+        * OR
+        *
+        * {
+        *   eligible: true,
+        *   message: "..."
+        * }
+        *
+        * Normalize all formats into:
+        *
+        * {
+        *   eligible: true/false,
+        *   message: "..."
+        * }
+        */
+
+        if (typeof data === "boolean") {
+
+          return {
+            eligible: data,
+
+            message:
+                data
+                    ? "You are eligible for this job."
+                    : "You are not eligible for this job."
+          };
+
+        }
+
+        return {
+          eligible:
+              Boolean(data.eligible),
+
+          message:
+              data.message ||
+              (
+                  data.eligible
+                      ? "You are eligible for this job."
+                      : "You are not eligible for this job."
+              )
+        };
 
       };
 
@@ -5316,4 +5453,3 @@ const styles = {
 
 
 export default App;
-// test

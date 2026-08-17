@@ -379,6 +379,7 @@ function App() {
   }, []);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -810,6 +811,7 @@ function App() {
     e.preventDefault();
 
     setMessage("");
+    setLoginLoading(true);
 
     try {
 
@@ -921,9 +923,14 @@ function App() {
 
       setMessageType("error");
 
+    } finally {
+
+      setLoginLoading(false);
+
     }
 
   };
+
 
   // ==========================================
   // LOAD STUDENT DATA
@@ -2083,9 +2090,10 @@ function App() {
 
                 <button
                     type="submit"
+                    disabled={loginLoading}
                     style={styles.button}
                 >
-                  Login
+                  {loginLoading ? "Logging in..." : "Login"}
                 </button>
 
               </form>

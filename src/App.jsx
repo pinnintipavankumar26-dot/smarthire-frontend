@@ -944,11 +944,9 @@ function App() {
 
     try {
 
-      await Promise.all([
-        loadJobs(),
-        loadApplications(),
-        loadStudentProfile()
-      ]);
+      await loadJobs();
+      await loadApplications();
+      await loadStudentProfile();
 
     } finally {
 
@@ -3764,11 +3762,14 @@ function StudentDashboard({
                       : "You are not eligible for this job."
               )
         };
-
-      };
+    };
 
   const applyForJob =
       async (job) => {
+
+        if (processingJobId === job.id) {
+            return;
+        }
 
         const existing =
             getApplicationForJob(

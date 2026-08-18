@@ -380,6 +380,8 @@ function App() {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [dashboardLoading, setDashboardLoading] = useState(false);
+
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -938,11 +940,21 @@ function App() {
 
   const loadStudentData = async () => {
 
-    await loadJobs();
+    setDashboardLoading(true);
 
-    await loadApplications();
+    try {
 
-    await loadStudentProfile();
+      await Promise.all([
+        loadJobs(),
+        loadApplications(),
+        loadStudentProfile()
+      ]);
+
+    } finally {
+
+      setDashboardLoading(false);
+
+    }
 
   };
 
@@ -3531,6 +3543,7 @@ function App() {
           userId={userId}
           role={role}
           jobs={jobs}
+          dashboardLoading={dashboardLoading}
           applications={applications}
           loadJobs={loadJobs}
           loadApplications={loadApplications}
@@ -3561,6 +3574,7 @@ function StudentDashboard({
                             userId,
                             role,
                             jobs,
+                            dashboardLoading,
                             applications,
                             loadJobs,
                             loadApplications,
@@ -3772,16 +3786,17 @@ function StudentDashboard({
 
         }
 
-        setProcessingJobId(
-            job.id
+        setProcessingJobId(job.id);
+
+        showMessage(
+            "Checking your eligibility...",
+            "success"
         );
 
         try {
 
-          const eligibility =
-              await checkEligibility(
-                  job.id
-              );
+            const eligibility =
+                await checkEligibility(job.id);
 
           if (!eligibility.eligible) {
 
@@ -3794,6 +3809,11 @@ function StudentDashboard({
             return;
 
           }
+
+          showMessage(
+              "You are eligible! Submitting your application...",
+              "success"
+          );
 
           const token =
               localStorage.getItem(
@@ -3877,13 +3897,48 @@ function StudentDashboard({
 
       };
 
-  return (
+return (
 
       <div
           style={
             styles.dashboard
           }
       >
+
+        {dashboardLoading && (
+            <div
+                style={{
+                    position: "fixed",
+                    inset: 0,
+                    background: "#f5f7fb",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexDirection: "column",
+                    zIndex: 9999
+                }}
+            >
+
+                <h2
+                    style={{
+                        margin: 0,
+                        color: "#3730a3"
+                    }}
+                >
+                    SmartHire
+                </h2>
+
+                <p
+                    style={{
+                        marginTop: "10px",
+                        color: "#64748b"
+                    }}
+                >
+                    Loading your dashboard...
+                </p>
+
+            </div>
+        )}
 
         <header
             style={styles.header}
@@ -4495,7 +4550,7 @@ function StudentDashboard({
                                                         }}
                                                     >
                                                         {processingJobId === job.id
-                                                            ? "Checking..."
+                                                            ? "Checking Eligibility..."
                                                             : "Check Eligibility & Apply"}
                                                     </button>
 
